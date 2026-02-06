@@ -1,0 +1,31 @@
+import 'package:flutter/material.dart';
+
+class AuthTextField extends StatelessWidget {
+  final String hint;
+  final IconData icon;
+  final bool obscure;
+
+  const AuthTextField({
+    super.key,
+    required this.hint,
+    required this.icon,
+    this.obscure = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      obscureText: obscure,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon),
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
