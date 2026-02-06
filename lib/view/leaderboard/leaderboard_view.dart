@@ -10,9 +10,9 @@ class LeaderboardView extends StatelessWidget {
       backgroundColor: AppColors.cream,
       body: Column(
         children: [
-          /// ===== TOP HEADER =====
+          /// ===== PODIUM HEADER =====
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 50, 16, 28),
+            padding: const EdgeInsets.fromLTRB(16, 50, 16, 30),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [Color(0xFF5B7CFF), Color(0xFF7B4CFF)],
@@ -36,25 +36,30 @@ class LeaderboardView extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 28),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: const [
-                    _TopRank("Rahim Khan", "9720 pts", "RK", Colors.grey, "2"),
-                    _TopRank(
-                      "Fatima Rahman",
-                      "9850 pts",
-                      "FR",
-                      Colors.amber,
-                      "1",
+                    _Podium(
+                      rank: 2,
+                      name: "Rahim Khan",
+                      points: "9720 pts",
+                      color: Colors.grey,
                     ),
-                    _TopRank(
-                      "Ayesha Sultana",
-                      "9580 pts",
-                      "AS",
-                      Colors.orange,
-                      "3",
+                    _Podium(
+                      rank: 1,
+                      name: "Fatima Rahman",
+                      points: "9850 pts",
+                      color: Colors.amber,
+                      big: true,
+                    ),
+                    _Podium(
+                      rank: 3,
+                      name: "Ayesha Sultana",
+                      points: "9580 pts",
+                      color: Colors.orange,
                     ),
                   ],
                 ),
@@ -64,20 +69,20 @@ class LeaderboardView extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          /// ===== RANKING LIST =====
+          /// ===== RANK LIST =====
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: const [
-                _RankItem(4, "Karim Ahmed", "45 tests • 90% accuracy", 9340),
-                _RankItem(5, "Nazia Islam", "47 tests • 89% accuracy", 9210),
-                _RankItem(6, "Imran Hossain", "44 tests • 88% accuracy", 9080),
-                _RankItem(7, "Sadia Begum", "46 tests • 87% accuracy", 8950),
+                _RankRow(4, "Karim Ahmed", "45 tests • 90% accuracy", 9340),
+                _RankRow(5, "Nazia Islam", "47 tests • 89% accuracy", 9210),
+                _RankRow(6, "Imran Hossain", "44 tests • 88% accuracy", 9080),
+                _RankRow(7, "Sadia Begum", "46 tests • 87% accuracy", 8950),
               ],
             ),
           ),
 
-          /// ===== YOUR RANK =====
+          /// ===== YOUR RANK CARD =====
           Container(
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
@@ -85,7 +90,7 @@ class LeaderboardView extends StatelessWidget {
               gradient: const LinearGradient(
                 colors: [Color(0xFF6A7CFF), Color(0xFF7C52FF)],
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(22),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -101,9 +106,9 @@ class LeaderboardView extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  "+3 ranks\nThis Week",
-                  style: TextStyle(color: Colors.white70),
+                  "+3 ranks\nThis week",
                   textAlign: TextAlign.right,
+                  style: TextStyle(color: Colors.white70),
                 ),
               ],
             ),
@@ -114,22 +119,22 @@ class LeaderboardView extends StatelessWidget {
   }
 }
 
-/// ================= WIDGETS =================
+/// ================= PODIUM =================
 
-class _TopRank extends StatelessWidget {
+class _Podium extends StatelessWidget {
+  final int rank;
   final String name;
   final String points;
-  final String initials;
-  final Color medalColor;
-  final String rank;
+  final Color color;
+  final bool big;
 
-  const _TopRank(
-    this.name,
-    this.points,
-    this.initials,
-    this.medalColor,
-    this.rank,
-  );
+  const _Podium({
+    required this.rank,
+    required this.name,
+    required this.points,
+    required this.color,
+    this.big = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -139,24 +144,24 @@ class _TopRank extends StatelessWidget {
           alignment: Alignment.topRight,
           children: [
             CircleAvatar(
-              radius: 34,
-              backgroundColor: medalColor.withOpacity(.2),
+              radius: big ? 40 : 32,
+              backgroundColor: color.withOpacity(.25),
               child: Text(
-                initials,
+                name.split(" ").map((e) => e[0]).take(2).join(),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
             CircleAvatar(
-              radius: 12,
-              backgroundColor: medalColor,
+              radius: 13,
+              backgroundColor: color,
               child: Text(
-                rank,
+                "$rank",
                 style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(name, style: const TextStyle(color: Colors.white, fontSize: 12)),
         Text(
           points,
@@ -167,13 +172,15 @@ class _TopRank extends StatelessWidget {
   }
 }
 
-class _RankItem extends StatelessWidget {
+/// ================= RANK ROW =================
+
+class _RankRow extends StatelessWidget {
   final int rank;
   final String name;
   final String stats;
   final int points;
 
-  const _RankItem(this.rank, this.name, this.stats, this.points);
+  const _RankRow(this.rank, this.name, this.stats, this.points);
 
   @override
   Widget build(BuildContext context) {
