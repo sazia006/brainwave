@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../view/test/test_view.dart';
+import '../view/test/test_view.dart'; // Ensure this import points to your TestView
 
 class QuestionSetCard extends StatelessWidget {
+  final String id; // ✅ Added ID to identify the set
   final String title;
   final String subject;
   final String questions;
@@ -13,6 +14,7 @@ class QuestionSetCard extends StatelessWidget {
 
   const QuestionSetCard({
     super.key,
+    required this.id, // ✅ Require ID
     required this.title,
     required this.subject,
     required this.questions,
@@ -78,9 +80,12 @@ class QuestionSetCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(questions),
               const SizedBox(width: 16),
-              const Icon(Icons.calendar_today, size: 16),
+              const Icon(
+                Icons.timer,
+                size: 16,
+              ), // Changed icon to Timer for relevance
               const SizedBox(width: 6),
-              Text(date),
+              Text(date), // This is likely the duration (e.g., "30 mins")
             ],
           ),
 
@@ -107,12 +112,17 @@ class QuestionSetCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: () {
+                // ✅ Pass ID and Title to TestView
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const TestView()),
+                  MaterialPageRoute(
+                    builder: (_) => TestView(setId: id, title: title),
+                  ),
                 );
               },
-              child: const Text("View Details"),
+              child: const Text(
+                "Start Practice",
+              ), // Changed text to be more actionable
             ),
           ),
         ],

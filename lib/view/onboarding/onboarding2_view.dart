@@ -8,7 +8,7 @@ class Onboarding2View extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OnboardingLayout(
-      gradient: const [Color(0xFFFFEDD5), Color(0xFFF97316)],
+      gradient: const [Color(0xFFFFEDD5), Color.fromARGB(255, 222, 147, 94)],
       icon: Icons.menu_book_rounded,
       tag: "Prepare like never before",
       title: "Practice & Real Exam Simulation",

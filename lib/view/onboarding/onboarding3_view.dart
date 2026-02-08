@@ -8,7 +8,7 @@ class Onboarding3View extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OnboardingLayout(
-      gradient: const [Color(0xFFD1FAE5), Color(0xFF34D399)],
+      gradient: const [Color(0xFFD1FAE5), Color.fromARGB(255, 164, 249, 218)],
       icon: Icons.group_rounded,
       tag: "Join a community of learners",
       title: "Learn Together, Grow Together",

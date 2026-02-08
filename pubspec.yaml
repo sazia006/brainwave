@@ -35,17 +35,24 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  google_fonts: ^6.3.2
+  flutter_svg: ^2.2.1
   provider: ^6.0.5
   loading_animation_widget: ^1.2.0
   font_awesome_flutter: ^10.4.0
   image_picker: ^1.0.7
-  firebase_messaging: ^14.7.0
-  firebase_core: ^2.15.0
-  flutter_local_notifications: ^13.0.0
-  firebase_auth: ^4.17.0
-  cloud_firestore: ^4.15.0
-  firebase_storage: ^11.6.0
-  firebase_analytics: ^10.8.0
+  firebase_messaging: ^16.1.1
+  firebase_core: ^4.4.0
+  firebase_auth: ^6.1.4
+  cloud_firestore: ^6.1.2
+  firebase_storage: ^13.0.6
+  firebase_analytics: ^12.1.1
+  cloudinary_public: ^0.23.1
+  file_picker: ^10.3.10
+  csv: ^6.0.0
+  emailjs: ^4.0.0
+  http: ^1.6.0
+  path: ^1.9.1
 
 
 dev_dependencies:
@@ -73,6 +80,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
   - assets/images/
+  - assets/images/
+  - assets/icons/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -80,6 +89,10 @@ flutter:
 
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
+  fonts:
+    - family: poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a

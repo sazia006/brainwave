@@ -51,28 +51,34 @@ class PracticeView extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
-              children: const [
+              children: [
                 _PracticeCard(
                   icon: Icons.menu_book,
                   color: Colors.green,
                   title: "Easy",
                   sets: "15 Sets",
                   desc: "Basic concepts and simple questions",
+                  onTap: () => Navigator.pushNamed(context, "/easy"),
                 ),
+
                 _PracticeCard(
                   icon: Icons.psychology,
                   color: Colors.orange,
                   title: "Medium",
                   sets: "12 Sets",
                   desc: "Moderate level challenging questions",
+                  onTap: () => Navigator.pushNamed(context, "/medium"),
                 ),
+
                 _PracticeCard(
                   icon: Icons.emoji_events,
                   color: Colors.red,
                   title: "Hard",
                   sets: "8 Sets",
                   desc: "Advanced level complex problems",
+                  onTap: () => Navigator.pushNamed(context, "/hard"),
                 ),
+
                 _PracticeCard(
                   icon: Icons.description,
                   color: Colors.purple,
@@ -80,11 +86,12 @@ class PracticeView extends StatelessWidget {
                   sets: "New",
                   desc: "Upload answer images and get evaluated",
                   highlight: true,
+                  onTap: () => Navigator.pushNamed(context, "/written"),
                 ),
 
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                _ProgressCard(),
+                const _ProgressCard(),
               ],
             ),
           ),
@@ -94,7 +101,7 @@ class PracticeView extends StatelessWidget {
   }
 }
 
-/// ================= COMPONENTS =================
+/// ================= PRACTICE CARD =================
 
 class _PracticeCard extends StatelessWidget {
   final IconData icon;
@@ -103,6 +110,7 @@ class _PracticeCard extends StatelessWidget {
   final String sets;
   final String desc;
   final bool highlight;
+  final VoidCallback onTap;
 
   const _PracticeCard({
     required this.icon,
@@ -110,69 +118,81 @@ class _PracticeCard extends StatelessWidget {
     required this.title,
     required this.sets,
     required this.desc,
+    required this.onTap,
     this.highlight = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: highlight ? const Color(0xFFF2ECFF) : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(blurRadius: 6, color: Colors.black.withOpacity(.05)),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(.15),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: highlight ? const Color(0xFFF2ECFF) : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(blurRadius: 6, color: Colors.black.withOpacity(.05)),
+          ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: color.withOpacity(.15),
+              child: Icon(icon, color: color),
+            ),
+
+            const SizedBox(width: 14),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      decoration: BoxDecoration(
-                        color: highlight ? Colors.purple : color,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        sets,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
+                      const SizedBox(width: 8),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: highlight ? Colors.purple : color,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          sets,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(desc, style: const TextStyle(color: Colors.grey)),
-              ],
+                    ],
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  Text(desc, style: const TextStyle(color: Colors.grey)),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right),
-        ],
+
+            const Icon(Icons.chevron_right),
+          ],
+        ),
       ),
     );
   }
 }
+
+/// ================= PROGRESS CARD =================
 
 class _ProgressCard extends StatelessWidget {
   const _ProgressCard();

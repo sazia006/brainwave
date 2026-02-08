@@ -8,11 +8,12 @@ class Onboarding1View extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OnboardingLayout(
-      gradient: const [Color(0xFFEDE9FE), Color(0xFF8B5CF6)],
+      gradient: const [Color(0xFFEDE9FE), Color.fromARGB(255, 183, 159, 239)],
       icon: Icons.psychology_alt,
-      tag: "স্মার্ট এআই সুপারিশ",
-      title: "ব্যক্তিগত শিক্ষা ব্যবস্থা",
-      desc: "আমাদের এআই আপনার দক্ষতা বিশ্লেষণ করে শেখার পথ তৈরি করে।",
+      tag: "Smart AI Suggestions",
+      title: "Personalized Learning System",
+      desc:
+          "Our AI analyzes your performance and creates a personalized learning path to help you master every topic efficiently.",
     );
   }
 }

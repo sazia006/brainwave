@@ -43,7 +43,7 @@ class OnboardingLayout extends StatelessWidget {
               const _LangChip(),
               TextButton(
                 onPressed: () =>
-                    Navigator.pushReplacementNamed(context, "/main"),
+                    Navigator.pushReplacementNamed(context, "/admin"),
                 child: const Text("Skip"),
               ),
             ],
@@ -101,7 +101,7 @@ class OnboardingLayout extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: last
-                  ? () => Navigator.pushReplacementNamed(context, "/auth")
+                  ? () => Navigator.pushReplacementNamed(context, "/login")
                   : vm.nextPage,
               child: Text(last ? "Get Started" : "Next"),
             ),
