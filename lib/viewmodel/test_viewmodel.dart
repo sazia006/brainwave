@@ -1,88 +1,52 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/question_service.dart';
 
 class TestViewModel extends ChangeNotifier {
-  final QuestionService _service = QuestionService();
-  final _db = FirebaseFirestore.instance;
-
-  bool _isLoading = true;
-  List<Map<String, dynamic>> _quizQuestions = [];
-  final Map<int, String> _userAnswers = {};
-
-  // New State variables for Admin settings
-  int _examDuration = 0; // in minutes
-
-  bool get isLoading => _isLoading;
-  List<Map<String, dynamic>> get quizQuestions => _quizQuestions;
-  Map<int, String> get userAnswers => _userAnswers;
-  int get examDuration => _examDuration;
+  bool isLoading = true;
+  List<Map<String, dynamic>> quizQuestions = [];
+  Map<int, String> userAnswers = {};
+  int examDuration = 20; // ✅ FIXED: Forced to 20 minutes
 
   Future<void> loadTest(String setId) async {
-    _isLoading = true;
+    isLoading = true;
     notifyListeners();
 
     try {
-      // 1. Fetch Set Details (Duration & Limit)
-      final setDoc = await _db.collection('practice_sets').doc(setId).get();
-      final setData = setDoc.data();
+      final db = FirebaseFirestore.instance;
 
-      _examDuration = setData?['duration'] ?? 30; // Default 30 mins
-      int questionsPerExam =
-          setData?['questionsPerExam'] ?? 20; // Default 20 Qs
+      // 1. Fetch ALL Questions for this Set
+      final qSnapshot = await db
+          .collection('questions')
+          .where('setId', isEqualTo: setId)
+          .get();
 
-      // 2. Fetch ALL questions from the pool
-      List<Map<String, dynamic>> allQuestions = await _service
-          .getQuestionsForSet(setId);
+      // 2. Convert to List
+      List<Map<String, dynamic>> allQuestions = qSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          ...data,
+          'id': doc.id,
+          'options': data['options'] is List ? data['options'] : [],
+        };
+      }).toList();
 
-      // 3. Shuffle
-      allQuestions.shuffle();
-
-      // 4. Slice based on Admin Limit
-      // If pool has 100, and limit is 30, takes 30.
-      // If pool has 10, and limit is 30, takes 10.
-      _quizQuestions = allQuestions.take(questionsPerExam).toList();
-
-      _userAnswers.clear();
+      // 3. ✅ SHUFFLE & TAKE 30
+      allQuestions.shuffle(); // Randomize order every time
+      if (allQuestions.length > 30) {
+        quizQuestions = allQuestions.sublist(0, 30); // Take first 30
+      } else {
+        quizQuestions = allQuestions; // Take all if less than 30
+      }
     } catch (e) {
       print("Error loading test: $e");
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
-  void selectAnswer(int questionIndex, String answer) {
-    _userAnswers[questionIndex] = answer;
+  void selectAnswer(int questionIndex, String selectedOption) {
+    userAnswers[questionIndex] = selectedOption;
     notifyListeners();
-  }
-
-  Map<String, dynamic> submitTest() {
-    int correct = 0;
-    int wrong = 0;
-    int skipped = 0;
-
-    for (int i = 0; i < _quizQuestions.length; i++) {
-      final String? userAnswer = _userAnswers[i];
-      final String correctAnswer = _quizQuestions[i]['correctAnswer'] ?? "";
-
-      if (userAnswer == null || userAnswer.isEmpty) {
-        skipped++;
-      } else if (userAnswer.trim() == correctAnswer.trim()) {
-        correct++;
-      } else {
-        wrong++;
-      }
-    }
-
-    double obtainedMarks = (correct * 1.0) - (wrong * 0.25);
-
-    return {
-      'totalQuestions': _quizQuestions.length,
-      'correct': correct,
-      'wrong': wrong,
-      'skipped': skipped,
-      'score': obtainedMarks,
-    };
   }
 }

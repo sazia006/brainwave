@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
-import '../../viewmodel/home_viewmodel.dart'; // Import the ViewModel
+import '../../viewmodel/home_viewmodel.dart';
+import '../admin/admin_shell.dart'; // Import the ViewModel
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -54,6 +55,21 @@ class _HomeViewState extends State<HomeView> {
                     ),
                     Row(
                       children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.admin_panel_settings,
+                            color: Colors.red,
+                          ), // Distinct red icon
+                          tooltip: "Open Admin Dashboard",
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AdminShell(),
+                              ),
+                            );
+                          },
+                        ),
                         const Icon(Icons.notifications_none),
                         const SizedBox(width: 12),
                         CircleAvatar(

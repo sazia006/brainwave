@@ -1,5 +1,9 @@
+import 'package:brainwave/written_test/written_test_sets_view.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
+import 'easy_sets_view.dart';
+import 'medium_sets_view.dart';
+import 'hard_sets_view.dart';
 
 class PracticeView extends StatelessWidget {
   const PracticeView({super.key});
@@ -8,118 +12,123 @@ class PracticeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.cream,
-      body: Column(
-        children: [
-          /// ===== HEADER =====
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 50, 16, 24),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF5B7CFF), Color(0xFF7B4CFF)],
+      body: SingleChildScrollView(
+        // Added Scroll View for safety
+        child: Column(
+          children: [
+            /// ===== HEADER =====
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 50, 16, 30),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF5B7CFF), Color(0xFF7B4CFF)],
+                ),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(28),
+                ),
               ),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Practice Arena",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    "Select a difficulty mode to start",
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Progress Card (Visual Only)
+                  const _ProgressCard(),
+                ],
+              ),
             ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.arrow_back, color: Colors.white),
-                    SizedBox(width: 10),
-                    Text(
-                      "Practice",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+
+            const SizedBox(height: 20),
+
+            /// ===== EXAM MODES =====
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  _PracticeModeCard(
+                    title: "Easy Mode",
+                    subtitle: "Fundamental concepts & basics",
+                    icon: Icons.school,
+                    color: Colors.green,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const EasySetsView()),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _PracticeModeCard(
+                    title: "Medium Mode",
+                    subtitle: "Intermediate problem solving",
+                    icon: Icons.trending_up,
+                    color: Colors.blue,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const MediumSetsView()),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _PracticeModeCard(
+                    title: "Hard Mode",
+                    subtitle: "Complex scenarios & deep logic",
+                    icon: Icons.psychology,
+                    color: Colors.red,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const HardSetsView()),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _PracticeModeCard(
+                    title: "Written Tests",
+                    subtitle: "Simulate real exam conditions",
+                    icon: Icons.description,
+                    color: Colors.purple,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const WrittenTestSetsView(),
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: 6),
-                Text(
-                  "Improve your skills",
-                  style: TextStyle(color: Colors.white70),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-
-          const SizedBox(height: 20),
-
-          /// ===== PRACTICE OPTIONS =====
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _PracticeCard(
-                  icon: Icons.menu_book,
-                  color: Colors.green,
-                  title: "Easy",
-                  sets: "15 Sets",
-                  desc: "Basic concepts and simple questions",
-                  onTap: () => Navigator.pushNamed(context, "/easy"),
-                ),
-
-                _PracticeCard(
-                  icon: Icons.psychology,
-                  color: Colors.orange,
-                  title: "Medium",
-                  sets: "12 Sets",
-                  desc: "Moderate level challenging questions",
-                  onTap: () => Navigator.pushNamed(context, "/medium"),
-                ),
-
-                _PracticeCard(
-                  icon: Icons.emoji_events,
-                  color: Colors.red,
-                  title: "Hard",
-                  sets: "8 Sets",
-                  desc: "Advanced level complex problems",
-                  onTap: () => Navigator.pushNamed(context, "/hard"),
-                ),
-
-                _PracticeCard(
-                  icon: Icons.description,
-                  color: Colors.purple,
-                  title: "Written Test",
-                  sets: "New",
-                  desc: "Upload answer images and get evaluated",
-                  highlight: true,
-                  onTap: () => Navigator.pushNamed(context, "/written"),
-                ),
-
-                const SizedBox(height: 20),
-
-                const _ProgressCard(),
-              ],
-            ),
-          ),
-        ],
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// ================= PRACTICE CARD =================
+// --- WIDGETS ---
 
-class _PracticeCard extends StatelessWidget {
+class _PracticeModeCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
   final IconData icon;
   final Color color;
-  final String title;
-  final String sets;
-  final String desc;
-  final bool highlight;
   final VoidCallback onTap;
 
-  const _PracticeCard({
+  const _PracticeModeCard({
+    required this.title,
+    required this.subtitle,
     required this.icon,
     required this.color,
-    required this.title,
-    required this.sets,
-    required this.desc,
     required this.onTap,
-    this.highlight = false,
   });
 
   @override
@@ -127,72 +136,56 @@ class _PracticeCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: highlight ? const Color(0xFFF2ECFF) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(blurRadius: 6, color: Colors.black.withOpacity(.05)),
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
           ],
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              backgroundColor: color.withOpacity(.15),
-              child: Icon(icon, color: color),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 28),
             ),
-
-            const SizedBox(width: 14),
-
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 8),
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: highlight ? Colors.purple : color,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          sets,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-
-                  const SizedBox(height: 6),
-
-                  Text(desc, style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
                 ],
               ),
             ),
-
-            const Icon(Icons.chevron_right),
+            Icon(Icons.chevron_right, color: Colors.grey[400]),
           ],
         ),
       ),
     );
   }
 }
-
-/// ================= PROGRESS CARD =================
 
 class _ProgressCard extends StatelessWidget {
   const _ProgressCard();
@@ -202,17 +195,16 @@ class _ProgressCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFEFF3FF), Color(0xFFF8F6FF)],
-        ),
+        color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _ProgressItem("127", "Completed", Colors.blue),
-          _ProgressItem("85%", "Accuracy", Colors.green),
-          _ProgressItem("42", "Streak", Colors.purple),
+          _ProgressItem("12", "Tests", Colors.white),
+          _ProgressItem("85%", "Accuracy", Colors.white),
+          _ProgressItem("5", "Streak", Colors.white),
         ],
       ),
     );
@@ -238,8 +230,10 @@ class _ProgressItem extends StatelessWidget {
             color: color,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.grey)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: color.withOpacity(0.8)),
+        ),
       ],
     );
   }

@@ -1,68 +1,132 @@
-import 'package:brainwave/view/auth/success_view.dart';
 import 'package:flutter/material.dart';
-import '../../viewmodel/otp_viewmodel.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'widgets/auth_scaffold.dart';
-import 'widgets/otp_timer_box.dart';
+import '../auth/success_view.dart';
 
-class CreateVerifyScreen extends StatefulWidget {
-  final String email;
-
-  const CreateVerifyScreen({super.key, required this.email});
+class CreateVerifyView extends StatefulWidget {
+  const CreateVerifyView({super.key, required String email});
 
   @override
-  State<CreateVerifyScreen> createState() => _CreateVerifyScreenState();
+  State<CreateVerifyView> createState() => _CreateVerifyViewState();
 }
 
-class _CreateVerifyScreenState extends State<CreateVerifyScreen> {
-  // ViewModel instance for logic
-  final OtpViewModel _viewModel = OtpViewModel();
+class _CreateVerifyViewState extends State<CreateVerifyView> {
+  String? selectedGroup;
+  bool loading = false;
 
-  // Local state to hold the code entered by the user
-  String _currentCode = "";
+  final List<String> groups = ["Science", "Arts", "Commerce"];
 
-  @override
-  void dispose() {
-    _viewModel.dispose();
-    super.dispose();
+  Future<void> saveGroup() async {
+    if (selectedGroup == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please select your group")));
+      return;
+    }
+
+    setState(() => loading = true);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+      "group": selectedGroup,
+      "updatedAt": Timestamp.now(),
+    }, SetOptions(merge: true));
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            const SuccessView(message: "Account Created Successfully!"),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
-      child: OtpTimerBox(
-        title: "Verify Account",
-        email: widget.email,
-        viewModel: _viewModel, // Pass VM so box listens to timer
-        onCodeChanged: (code) {
-          // Update local state whenever user types
-          _currentCode = code;
-        },
-        onVerify: () async {
-          // Trigger business logic
-          // Note: ensure your OtpViewModel has a method like validateCode or verifyCode
-          final success = await _viewModel.verifyOtp(_currentCode);
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 420),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Select Your Group",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
 
-          if (!mounted) return;
+            const SizedBox(height: 12),
 
-          if (success) {
-            // Success Logic
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    const SuccessView(message: "Account Created Successfully!"),
+            const Text(
+              "This helps us personalize your learning experience",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+
+            const SizedBox(height: 24),
+
+            /// 🔽 GROUP DROPDOWN
+            DropdownButtonFormField<String>(
+              value: selectedGroup,
+              hint: const Text("Select HSC Group"),
+              items: groups
+                  .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                  .toList(),
+              onChanged: (value) {
+                setState(() => selectedGroup = value);
+              },
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFFFFF3E8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFFF7941D)),
+                ),
               ),
-            );
-          } else {
-            // Error Logic
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Invalid verification code"),
-                backgroundColor: Colors.red,
+            ),
+
+            const SizedBox(height: 24),
+
+            /// ✅ SAVE BUTTON
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: loading ? null : saveGroup,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF7941D),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: loading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        "Continue →",
+                        style: TextStyle(color: Colors.black),
+                      ),
               ),
-            );
-          }
-        },
+            ),
+          ],
+        ),
       ),
     );
   }

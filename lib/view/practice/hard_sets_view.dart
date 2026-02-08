@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../viewmodel/practice_viewmodel.dart';
 import '../../widgets/question_set_card.dart';
 import '../../core/app_colors.dart';
+import '../test/test_view.dart'; // ✅ Import TestView
 
 class HardSetsView extends StatefulWidget {
   const HardSetsView({super.key});
@@ -11,13 +12,11 @@ class HardSetsView extends StatefulWidget {
 }
 
 class _HardSetsViewState extends State<HardSetsView> {
-  // 1. Instantiate ViewModel
   final PracticeViewModel _viewModel = PracticeViewModel();
 
   @override
   void initState() {
     super.initState();
-    // 2. Fetch "hard" sets
     _viewModel.fetchSets("hard");
   }
 
@@ -28,28 +27,18 @@ class _HardSetsViewState extends State<HardSetsView> {
       body: ListenableBuilder(
         listenable: _viewModel,
         builder: (context, child) {
-          // 3. Loading State
           if (_viewModel.isLoading) {
             return const Center(
               child: CircularProgressIndicator(color: AppColors.softGreen),
             );
           }
 
-          // 4. Empty State
           if (_viewModel.sets.isEmpty) {
             return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.lock_clock, size: 48, color: Colors.grey),
-                  SizedBox(height: 10),
-                  Text("No hard practice sets available."),
-                ],
-              ),
+              child: Text("No easy practice sets available."),
             );
           }
 
-          // 5. Render List
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: _viewModel.sets.length,
@@ -59,14 +48,29 @@ class _HardSetsViewState extends State<HardSetsView> {
               final int qCount =
                   set['questionsPerExam'] ?? set['totalQuestions'] ?? 0;
 
-              return QuestionSetCard(
-                id: set['id'], // Pass ID for navigation
-                title: set['title'] ?? "Untitled Set",
-                subject: set['subject'] ?? "General",
-                questions: "$qCount Questions",
-                date: "${set['duration'] ?? 30} mins",
-                status: "Start",
-                statusColor: Colors.red, // Red theme for Hard
+              // ✅ WRAP WITH GESTURE DETECTOR
+              return GestureDetector(
+                onTap: () {
+                  // Navigate to TestView with the Set ID
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TestView(
+                        setId: set['id'],
+                        title: set['title'] ?? "Test",
+                      ),
+                    ),
+                  );
+                },
+                child: QuestionSetCard(
+                  id: set['id'],
+                  title: set['title'] ?? "Untitled Set",
+                  subject: set['subject'] ?? "General",
+                  questions: "$qCount Questions",
+                  date: "${set['duration'] ?? 30} mins",
+                  status: "Start",
+                  statusColor: Colors.green,
+                ),
               );
             },
           );

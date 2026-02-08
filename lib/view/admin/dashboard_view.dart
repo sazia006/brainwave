@@ -147,6 +147,13 @@ class DashboardView extends StatelessWidget {
                 onTap: () => onQuickAction?.call(3),
               );
 
+              final card4 = _QuickActionCard(
+                title: "Written Tests",
+                icon: Icons.description,
+                color: Colors.purple,
+                onTap: () => onQuickAction?.call(4),
+              );
+
               // ✅ FIX: Simple Logic (No complex mapping)
               if (isMobile) {
                 return Column(
@@ -156,6 +163,8 @@ class DashboardView extends StatelessWidget {
                     card2,
                     const SizedBox(height: 16),
                     card3,
+                    const SizedBox(height: 16),
+                    card4,
                   ],
                 );
               } else {

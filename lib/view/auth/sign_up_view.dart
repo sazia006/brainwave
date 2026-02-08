@@ -177,7 +177,7 @@ class _SignUpViewState extends State<SignUpView> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) =>
-                                      CreateVerifyScreen(email: email),
+                                      CreateVerifyView(email: email),
                                 ),
                               );
                             }

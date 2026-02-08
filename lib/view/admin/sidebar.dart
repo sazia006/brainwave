@@ -30,6 +30,7 @@ class Sidebar extends StatelessWidget {
           _item(Icons.upload_file, "Upload Questions", 1), // index 1
           _item(Icons.assignment, "Evaluate Sheets", 2), // index 2
           _item(Icons.quiz, "Question Management", 3), // index 3
+          _item(Icons.description, "Written Tests", 4), // index 4
         ],
       ),
     );

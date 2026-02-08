@@ -1,25 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class QuestionService {
-  final _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // 1. Get Practice Sets (for the Sets List view)
   Future<List<Map<String, dynamic>>> getPracticeSets(String difficulty) async {
     try {
+      // ✅ This query requires the Composite Index you created:
+      // Index: Collection 'practice_sets' -> Fields: 'difficulty' Asc + 'createdAt' Desc
       final snap = await _db
           .collection("practice_sets")
           .where("difficulty", isEqualTo: difficulty)
           .orderBy('createdAt', descending: true)
           .get();
 
-      // Return a list of sets with their Document ID included
       return snap.docs.map((d) {
         final data = d.data();
-        data['id'] =
-            d.id; // Critical: Add the doc ID so we can query questions later
+        // ✅ CRITICAL: Add the document ID ('id') to the map.
+        // The UI needs this ID to pass it to the TestView later.
+        data['id'] = d.id;
         return data;
       }).toList();
     } catch (e) {
+      // If you see "failed-precondition", it means the Index is still building or missing.
       print("Error fetching sets: $e");
       return [];
     }
@@ -30,10 +33,18 @@ class QuestionService {
     try {
       final snap = await _db
           .collection("questions")
-          .where("setId", isEqualTo: setId) // Filter by the linked Set ID
+          .where(
+            "setId",
+            isEqualTo: setId,
+          ) // Filters questions linked to this set
           .get();
 
-      return snap.docs.map((d) => d.data()).toList();
+      return snap.docs.map((d) {
+        final data = d.data();
+        data['id'] =
+            d.id; // Helpful if you need to track specific question IDs later
+        return data;
+      }).toList();
     } catch (e) {
       print("Error fetching questions: $e");
       return [];
