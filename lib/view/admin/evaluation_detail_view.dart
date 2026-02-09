@@ -16,34 +16,61 @@ class EvaluationDetailView extends StatefulWidget {
 }
 
 class _EvaluationDetailViewState extends State<EvaluationDetailView> {
-  final Map<int, TextEditingController> _controllers = {};
+  // We need two controllers per question: one for Marks, one for Feedback
+  final Map<int, TextEditingController> _markControllers = {};
+  final Map<int, TextEditingController> _feedbackControllers = {}; // ✅ Added
   bool _isSaving = false;
 
   @override
   void dispose() {
-    for (var c in _controllers.values) {
+    for (var c in _markControllers.values) {
       c.dispose();
     }
+    for (var c in _feedbackControllers.values) {
+      c.dispose();
+    } // ✅ Dispose
     super.dispose();
   }
 
   Future<void> _submitEvaluation(List<dynamic> answers) async {
     setState(() => _isSaving = true);
 
-    double totalMarks = 0;
+    double totalObtained = 0;
+    double maxTotal = 0;
+    List<Map<String, dynamic>> feedbackList =
+        []; // ✅ This is what the Result View needs
 
+    // 1. Compile Data Loop
     for (int i = 0; i < answers.length; i++) {
-      double marks = double.tryParse(_controllers[i]?.text ?? "0") ?? 0;
-      totalMarks += marks;
+      double marks = double.tryParse(_markControllers[i]?.text ?? "0") ?? 0;
+      String feedback =
+          _feedbackControllers[i]?.text.trim() ?? ""; // ✅ Get feedback
+      if (feedback.isEmpty) feedback = "Evaluated";
+
+      totalObtained += marks;
+      maxTotal +=
+          10; // Assuming 10 marks per question (or fetch from DB if available)
+
+      // ✅ Build the breakdown list
+      feedbackList.add({
+        'question': answers[i]['question'] ?? "Question ${i + 1}",
+        'score': marks.toInt(),
+        'maxScore': 10,
+        'feedback': feedback,
+      });
     }
 
     try {
+      // 2. Update Firestore with the structure WrittenTestResultView expects
       await FirebaseFirestore.instance
           .collection('written_submissions')
           .doc(widget.submissionId)
           .update({
             'status': 'evaluated',
-            'marksObtained': totalMarks,
+            'score': totalObtained.toInt(), // Student app looks for 'score'
+            'totalScore': maxTotal.toInt(),
+            'feedbackList': feedbackList, // ✅ Save the list
+            'evaluatorName': "Instructor", // Or fetch current admin name
             'evaluatedAt': FieldValue.serverTimestamp(),
           });
 
@@ -66,25 +93,30 @@ class _EvaluationDetailViewState extends State<EvaluationDetailView> {
 
   @override
   Widget build(BuildContext context) {
-    final List<dynamic> answers = widget.data['answers'] ?? [];
+    final List<dynamic> answers =
+        widget.data['answers'] ??
+        []; // Ensure your submission saves 'answers' as a list of maps, or strings.
+    // If 'answers' in DB is just a list of Image URLs (strings), we might need to adjust how we get the Question Text.
+    // Assuming 'answers' in DB is currently just Strings (URLs) based on your previous Student Submit code:
+    // We will handle that below.
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FC),
       appBar: AppBar(
-        title: Text("Evaluating: ${widget.data['studentName']}"),
+        title: Text("Evaluating: ${widget.data['studentName'] ?? 'Student'}"),
         actions: [
           if (_isSaving)
             const Center(
               child: Padding(
                 padding: EdgeInsets.only(right: 16),
-                child: CircularProgressIndicator(color: Colors.white),
+                child: CircularProgressIndicator(),
               ),
             )
           else
             TextButton.icon(
               icon: const Icon(Icons.check_circle, color: Colors.blue),
               label: const Text(
-                "Submit Evaluation",
+                "Submit",
                 style: TextStyle(
                   color: Colors.blue,
                   fontWeight: FontWeight.bold,
@@ -104,8 +136,27 @@ class _EvaluationDetailViewState extends State<EvaluationDetailView> {
               child: ListView.builder(
                 itemCount: answers.length,
                 itemBuilder: (_, i) {
-                  final answer = answers[i];
-                  _controllers.putIfAbsent(i, () => TextEditingController());
+                  // Handle if answers are Maps (with question text) or just Strings (URLs)
+                  // Let's assume the previous step saved them as Maps or we use a generic label
+                  final answerData = answers[i];
+                  String questionText = "Question ${i + 1}";
+                  String? imageUrl;
+
+                  if (answerData is Map) {
+                    questionText = answerData['question'] ?? questionText;
+                    imageUrl = answerData['answerUrl']; // or just 'url'
+                  } else if (answerData is String) {
+                    imageUrl = answerData; // It's just the URL
+                  }
+
+                  _markControllers.putIfAbsent(
+                    i,
+                    () => TextEditingController(),
+                  );
+                  _feedbackControllers.putIfAbsent(
+                    i,
+                    () => TextEditingController(),
+                  ); // ✅ Init
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 24),
@@ -115,13 +166,15 @@ class _EvaluationDetailViewState extends State<EvaluationDetailView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Question ${i + 1}: ${answer['question'] ?? 'No Text'}",
+                            questionText,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
                           const SizedBox(height: 12),
+
+                          // Answer Image
                           Container(
                             height: 300,
                             width: double.infinity,
@@ -130,9 +183,9 @@ class _EvaluationDetailViewState extends State<EvaluationDetailView> {
                               border: Border.all(color: Colors.grey[300]!),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: answer['answerUrl'] != null
+                            child: imageUrl != null && imageUrl.isNotEmpty
                                 ? Image.network(
-                                    answer['answerUrl'],
+                                    imageUrl,
                                     fit: BoxFit.contain,
                                     errorBuilder: (_, __, ___) => const Center(
                                       child: Text("Image Failed to Load"),
@@ -142,15 +195,38 @@ class _EvaluationDetailViewState extends State<EvaluationDetailView> {
                                     child: Text("No Image Uploaded"),
                                   ),
                           ),
+
                           const SizedBox(height: 16),
-                          TextField(
-                            controller: _controllers[i],
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: "Marks for this answer",
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.score),
-                            ),
+
+                          // Grading Row
+                          Row(
+                            children: [
+                              // Marks Input
+                              SizedBox(
+                                width: 150,
+                                child: TextField(
+                                  controller: _markControllers[i],
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    labelText: "Marks (/10)",
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.score),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              // ✅ Feedback Input
+                              Expanded(
+                                child: TextField(
+                                  controller: _feedbackControllers[i],
+                                  decoration: const InputDecoration(
+                                    labelText: "Feedback / Remarks",
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.comment),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -159,6 +235,8 @@ class _EvaluationDetailViewState extends State<EvaluationDetailView> {
                 },
               ),
             ),
+
+            // ... (Your Right Side Info Panel Code remains the same) ...
             const SizedBox(width: 24),
             Expanded(
               flex: 1,
@@ -178,7 +256,9 @@ class _EvaluationDetailViewState extends State<EvaluationDetailView> {
                       ),
                       const Divider(),
                       const SizedBox(height: 10),
-                      Text("Exam: ${widget.data['examTitle']}"),
+                      Text(
+                        "Exam: ${widget.data['examTitle'] ?? widget.data['testTitle'] ?? 'Unknown'}",
+                      ), // Check both fields
                       const SizedBox(height: 8),
                       Text("Total Questions: ${answers.length}"),
                     ],

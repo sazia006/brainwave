@@ -32,7 +32,7 @@ class EvaluateSheetsView extends StatelessWidget {
               final d = doc.data() as Map<String, dynamic>;
               return [
                 Text(d['studentName'] ?? 'Unknown'),
-                Text(d['examTitle'] ?? 'Unknown'),
+                Text(d['examTitle'] ?? d['testTitle'] ?? 'Unknown'),
                 Text(
                   (d['submittedAt'] as Timestamp?)?.toDate().toString().split(
                         ' ',

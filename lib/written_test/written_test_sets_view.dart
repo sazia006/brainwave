@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/app_colors.dart';
-import 'submit_written_test_view.dart'; // Ensure this import is correct
+import '../view/result/written_test_result_view.dart';
+import 'submit_written_test_view.dart';
+// ✅ Import the Result View we created earlier
 
 class WrittenTestSetsView extends StatelessWidget {
   const WrittenTestSetsView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // TODO: Replace with actual User ID from your Auth Provider
+    // String userId = FirebaseAuth.instance.currentUser!.uid;
+    String userId = "CURRENT_USER_ID";
+
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: Column(
@@ -25,7 +31,7 @@ class WrittenTestSetsView extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    BackButton(color: Colors.white), // Added back button
+                    BackButton(color: Colors.white),
                     SizedBox(width: 8),
                     Text(
                       "Written Test",
@@ -38,7 +44,7 @@ class WrittenTestSetsView extends StatelessWidget {
                   ],
                 ),
                 Padding(
-                  padding: EdgeInsets.only(left: 48), // Align with title
+                  padding: EdgeInsets.only(left: 48),
                   child: Text(
                     "Select a practice set",
                     style: TextStyle(color: Colors.white70),
@@ -48,68 +54,140 @@ class WrittenTestSetsView extends StatelessWidget {
             ),
           ),
 
-          /// ===== FIRESTORE LIST =====
+          /// ===== LIST CONTENT =====
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
+              // 1. Stream Written Tests
               stream: FirebaseFirestore.instance
                   .collection('written_tests')
                   .snapshots(),
-              builder: (context, snapshot) {
-                // 1. Loading State
-                if (snapshot.connectionState == ConnectionState.waiting) {
+              builder: (context, testSnap) {
+                if (testSnap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // 2. Error State
-                if (snapshot.hasError) {
-                  return const Center(child: Text("Error loading tests"));
-                }
+                // 2. Stream User's Submissions (Nested Stream)
+                // We check 'written_submissions' to see the status of each test for THIS user
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('written_submissions')
+                      .where('userId', isEqualTo: userId)
+                      .snapshots(),
+                  builder: (context, subSnap) {
+                    if (!subSnap.hasData) return const SizedBox();
 
-                // 3. Empty State
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text("No written tests available."),
-                  );
-                }
+                    final tests = testSnap.data!.docs;
+                    final submissions = subSnap.data!.docs;
 
-                final docs = snapshot.data!.docs;
+                    if (tests.isEmpty) {
+                      return const Center(
+                        child: Text("No written tests available."),
+                      );
+                    }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: tests.length,
+                      itemBuilder: (context, index) {
+                        // A. Get Test Data
+                        final testDoc = tests[index];
+                        final testData = testDoc.data() as Map<String, dynamic>;
+                        final String testId = testDoc.id;
 
-                    // Extract Data safely
-                    final String title = data['title'] ?? "Untitled Test";
-                    final String subject = data['subject'] ?? "General";
-                    final int duration = data['duration'] ?? 60;
+                        // B. Find Matching Submission (if any)
+                        DocumentSnapshot? submissionDoc;
+                        try {
+                          submissionDoc = submissions.firstWhere(
+                            (sub) => sub['testId'] == testId,
+                          );
+                        } catch (e) {
+                          submissionDoc = null;
+                        }
 
-                    // Crucial: Get the questions array
-                    final List<dynamic> rawQuestions = data['questions'] ?? [];
-                    final List<String> questionsList = rawQuestions
-                        .map((e) => e.toString())
-                        .toList();
+                        // C. Determine Status
+                        String status = "start"; // Default
+                        if (submissionDoc != null) {
+                          status = submissionDoc['status'] ?? 'pending';
+                        }
 
-                    return _WrittenSetCard(
-                      title: title,
-                      subject: subject,
-                      questions: "${questionsList.length} Questions",
-                      time: "$duration mins",
-                      completed:
-                          false, // You can link this to a 'submissions' check later
-                      onTap: () {
-                        // Navigate and Pass Data
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SubmitWrittenTestView(
-                              setTitle: title,
-                              subject: subject,
-                              questions:
-                                  questionsList, // ✅ Passing fetched questions
-                            ),
-                          ),
+                        // D. Prepare Data for UI
+                        final List<dynamic> rawQuestions =
+                            testData['questions'] ?? [];
+                        final String questionCount =
+                            "${rawQuestions.length} Questions";
+
+                        return _WrittenSetCard(
+                          title: testData['title'] ?? "Untitled Test",
+                          subject: testData['subject'] ?? "General",
+                          questions: questionCount,
+                          time: "${testData['duration'] ?? 60} mins",
+                          status: status, // Pass status instead of boolean
+                          onTap: () {
+                            // --- NAVIGATION LOGIC ---
+                            if (status == 'start') {
+                              // 1. Start Test
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SubmitWrittenTestView(
+                                    // Make sure SubmitView accepts testId now!
+                                    // testId: testId,
+                                    setTitle: testData['title'],
+                                    subject: testData['subject'],
+                                    questions: rawQuestions
+                                        .map((e) => e.toString())
+                                        .toList(),
+                                  ),
+                                ),
+                              );
+                            } else if (status == 'evaluated') {
+                              // 2. View Result (PASS ACTUAL DATA)
+                              final subData =
+                                  submissionDoc!.data() as Map<String, dynamic>;
+
+                              // Format Date safely
+                              String dateStr = "Unknown Date";
+                              if (subData['evaluatedAt'] != null) {
+                                DateTime date =
+                                    (subData['evaluatedAt'] as Timestamp)
+                                        .toDate();
+                                dateStr =
+                                    "${date.year}-${date.month}-${date.day}";
+                              }
+
+                              // Parse Feedback List
+                              List<Map<String, dynamic>> feedbacks = [];
+                              if (subData['feedbackList'] != null) {
+                                feedbacks = List<Map<String, dynamic>>.from(
+                                  subData['feedbackList'],
+                                );
+                              }
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => WrittenTestResultView(
+                                    testTitle: testData['title'],
+                                    totalScore: subData['totalScore'] ?? 100,
+                                    obtainedScore: subData['score'] ?? 0,
+                                    evaluatorName:
+                                        subData['evaluatorName'] ??
+                                        "Instructor",
+                                    evaluationDate: dateStr,
+                                    feedbackList: feedbacks,
+                                  ),
+                                ),
+                              );
+                            } else {
+                              // 3. Pending
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Submission is under review."),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            }
+                          },
                         );
                       },
                     );
@@ -124,13 +202,14 @@ class WrittenTestSetsView extends StatelessWidget {
   }
 }
 
-// --- WIDGET: CARD ---
+// --- UPDATED CARD WIDGET ---
 class _WrittenSetCard extends StatelessWidget {
   final String title;
   final String subject;
   final String questions;
   final String time;
-  final bool completed;
+  final String
+  status; // Changed from bool to String ('start', 'pending', 'evaluated')
   final VoidCallback onTap;
 
   const _WrittenSetCard({
@@ -138,12 +217,34 @@ class _WrittenSetCard extends StatelessWidget {
     required this.subject,
     required this.questions,
     required this.time,
-    required this.completed,
+    required this.status,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    // visual logic based on status
+    Color statusColor;
+    String statusText;
+    IconData statusIcon;
+
+    switch (status) {
+      case 'evaluated':
+        statusColor = Colors.green;
+        statusText = "View Result";
+        statusIcon = Icons.visibility;
+        break;
+      case 'pending':
+        statusColor = Colors.orange;
+        statusText = "Pending";
+        statusIcon = Icons.hourglass_empty;
+        break;
+      default:
+        statusColor = const Color(0xFF5B7CFF);
+        statusText = "Start Test";
+        statusIcon = Icons.play_arrow;
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -161,54 +262,89 @@ class _WrittenSetCard extends StatelessWidget {
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              subject,
-              style: const TextStyle(
-                color: Colors.green,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.description, size: 16, color: Colors.grey),
-                const SizedBox(width: 6),
-                Text(questions, style: const TextStyle(color: Colors.black54)),
-                const SizedBox(width: 14),
-                const Icon(Icons.timer, size: 16, color: Colors.grey),
-                const SizedBox(width: 6),
-                Text(time, style: const TextStyle(color: Colors.black54)),
-              ],
-            ),
-            if (completed)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    "Completed",
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        subject,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.description,
+                            size: 14,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            questions,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Icon(Icons.timer, size: 14, color: Colors.grey[400]),
+                          const SizedBox(width: 4),
+                          Text(
+                            time,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                // Dynamic Status Button
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(statusIcon, size: 16, color: statusColor),
+                      if (status != 'pending') ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
